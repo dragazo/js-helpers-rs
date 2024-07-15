@@ -140,3 +140,18 @@ fn test_object_access() {
     }
     assert_eq!(js!(v.foo?.bar?.baz).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
 }
+
+#[wasm_bindgen_test]
+fn test_function_calls() {
+    let add = web_sys::js_sys::Function::new_with_args("a, b", "return a + b;");
+    let v = js!({
+        add,
+        sub: web_sys::js_sys::Function::new_with_args("a, b", "return a - b;"),
+        more: {
+            stuff: { a: add },
+        },
+    }).unwrap();
+    assert_eq!(js!(v.add(5, 4)).unwrap().as_f64().unwrap(), 9.0);
+    assert_eq!(js!(v.sub(5, 4)).unwrap().as_f64().unwrap(), 1.0);
+    assert_eq!(js!(v.more.stuff.a(1, 6)).unwrap().as_f64().unwrap(), 7.0);
+}
