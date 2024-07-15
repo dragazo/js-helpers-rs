@@ -119,6 +119,10 @@ macro_rules! js {
             x => x,
         }
     }};
+    ($root:ident ( $($args:tt)* ) $($rest:tt)*) => {{
+        let js_helpers_context = $crate::wasm_bindgen::JsValue::undefined();
+        js!(@function_call js_helpers_context $root ( $($args)* ) $($rest)*)
+    }};
     (@function_call $root:ident $func:ident ( $($args:tt)* ) $($rest:tt)*) => {
         match $crate::wasm_bindgen::JsCast::dyn_ref::<$crate::js_sys::Function>(&$func) {
             ::std::option::Option::Some(js_helpers_function) => match js!([$($args)*]) {
