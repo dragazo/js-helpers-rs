@@ -1,76 +1,120 @@
 pub use wasm_bindgen;
 pub use web_sys::{self, js_sys};
 
+#[derive(Debug)]
 pub enum JsMacroError {
 
 }
+pub type JsMacroResult = Result<wasm_bindgen::JsValue, JsMacroError>;
 
 #[macro_export]
 macro_rules! js {
     (null) => {
-        $crate::wasm_bindgen::JsValue::null()
+        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::null())
     };
     (undefined) => {
-        $crate::wasm_bindgen::JsValue::undefined()
+        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::undefined())
     };
     ($v:ident) => {
-        $crate::wasm_bindgen::JsValue::from($v.clone())
+        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($v.clone()))
     };
 
     // --------------------------------------------------------------------------------------------------------------
 
     ([ $($t:tt)* ]) => {{
         let mut js_helpers_array_target = $crate::js_sys::Array::new();
-        js!(@fill_array js_helpers_array_target $($t)*);
-        $crate::wasm_bindgen::JsValue::from(js_helpers_array_target)
+        js!(@fill_array js_helpers_array_target $($t)*)
     }};
-    (@fill_array $target:ident) => {};
-    (@fill_array $target:ident $v:ident $(, $($rest:tt)*)?) => {{
-        $target.push(&js!($v));
-        js!(@fill_array $target $($($rest)*)?);
-    }};
-    (@fill_array $target:ident [ $($t:tt)* ] $(, $($rest:tt)*)?) => {{
-        $target.push(&js!([ $($t)* ]));
-        js!(@fill_array $target $($($rest)*)?);
-    }};
-    (@fill_array $target:ident { $($t:tt)* } $(, $($rest:tt)*)?) => {{
-        $target.push(&js!({ $($t)* }));
-        js!(@fill_array $target $($($rest)*)?);
-    }};
-    (@fill_array $target:ident $v:expr $(, $($rest:tt)*)?) => {{
-        $target.push(&js!($v));
-        js!(@fill_array $target $($($rest)*)?);
-    }};
+    (@fill_array $target:ident) => {
+        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($target))
+    };
+    (@fill_array $target:ident $v:ident $(, $($rest:tt)*)?) => {
+        match js!($v) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.push(&v);
+                js!(@fill_array $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
+    (@fill_array $target:ident [ $($t:tt)* ] $(, $($rest:tt)*)?) => {
+        match js!([ $($t)* ]) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.push(&v);
+                js!(@fill_array $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
+    (@fill_array $target:ident { $($t:tt)* } $(, $($rest:tt)*)?) => {
+        match js!({ $($t)* }) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.push(&v);
+                js!(@fill_array $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
+    (@fill_array $target:ident $v:expr $(, $($rest:tt)*)?) => {
+        match js!($v) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.push(&v);
+                js!(@fill_array $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
 
     // --------------------------------------------------------------------------------------------------------------
 
     ({ $($t:tt)* }) => {{
         let mut js_helpers_object_target = $crate::js_sys::Map::new();
-        js!(@fill_object js_helpers_object_target $($t)*);
-        $crate::wasm_bindgen::JsValue::from(js_helpers_object_target)
+        js!(@fill_object js_helpers_object_target $($t)*)
     }};
-    (@fill_object $target:ident) => {};
-    (@fill_object $target:ident $key:ident : $value:ident $(, $($rest:tt)*)?) => {{
-        $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &js!($value));
-        js!(@fill_object $target $($($rest)*)?);
-    }};
-    (@fill_object $target:ident $key:ident : [ $($t:tt)* ] $(, $($rest:tt)*)?) => {{
-        $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &js!([ $($t)* ]));
-        js!(@fill_object $target $($($rest)*)?);
-    }};
-    (@fill_object $target:ident $key:ident : { $($t:tt)* } $(, $($rest:tt)*)?) => {{
-        $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &js!({ $($t)* }));
-        js!(@fill_object $target $($($rest)*)?);
-    }};
-    (@fill_object $target:ident $key:ident : $value:expr $(, $($rest:tt)*)?) => {{
-        $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &js!($value));
-        js!(@fill_object $target $($($rest)*)?);
-    }};
+    (@fill_object $target:ident) => {
+        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($target))
+    };
+    (@fill_object $target:ident $key:ident : $value:ident $(, $($rest:tt)*)?) => {
+        match js!($value) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &v);
+                js!(@fill_object $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
+    (@fill_object $target:ident $key:ident : [ $($t:tt)* ] $(, $($rest:tt)*)?) => {
+        match js!([ $($t)* ]) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &v);
+                js!(@fill_object $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
+    (@fill_object $target:ident $key:ident : { $($t:tt)* } $(, $($rest:tt)*)?) => {
+        match js!({ $($t)* }) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &v);
+                js!(@fill_object $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
+    (@fill_object $target:ident $key:ident : $value:expr $(, $($rest:tt)*)?) => {
+        match js!($value) {
+            $crate::JsMacroResult::Ok(v) => {
+                $target.set(&$crate::wasm_bindgen::JsValue::from(stringify!($key)), &v);
+                js!(@fill_object $target $($($rest)*)?)
+            }
+            x => x,
+        }
+    };
 
     // --------------------------------------------------------------------------------------------------------------
 
     ($v:expr) => {
-        $crate::wasm_bindgen::JsValue::from($v)
+        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($v))
     };
 
     // --------------------------------------------------------------------------------------------------------------
@@ -79,9 +123,6 @@ macro_rules! js {
 
 
 
-    // ($root:ident) => {
-    //     $root.clone()
-    // };
     // ($root:ident . $f:ident ( $($args:expr),*$(,)? )) => {
     //     Reflect::apply(&js!($root.$f).dyn_ref().unwrap(), &$root, &(vec![$($args),*] as Vec<JsValue>).into_iter().collect())
     // };
