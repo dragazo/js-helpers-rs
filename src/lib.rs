@@ -128,11 +128,11 @@ macro_rules! js {
             ::std::option::Option::Some(js_helpers_function) => match js!([$($args)*]) {
                 $crate::JsMacroResult::Ok(js_helpers_args) => match $crate::js_sys::Reflect::apply(&js_helpers_function, &$root, &$crate::wasm_bindgen::JsCast::dyn_into(js_helpers_args).unwrap()) {
                     ::std::result::Result::Ok(js_helpers_result) => js!(js_helpers_result $($rest)*),
-                    ::std::result::Result::Err(error) => $crate::JsMacroResult::Err($crate::JsMacroError::FunctionError { object: $func, error }),
+                    ::std::result::Result::Err(error) => $crate::JsMacroResult::Err($crate::JsMacroError::FunctionError { object: $func.into(), error }),
                 }
                 x => x,
             }
-            ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NotFunction { object: $func }),
+            ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NotFunction { object: $func.into() }),
         }
     };
 
