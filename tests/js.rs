@@ -92,11 +92,48 @@ fn test_object() {
 }
 
 #[wasm_bindgen_test]
-fn test_field_access() {
+fn test_array_access() {
+    let v = js!([
+        1,
+        5,
+        [4],
+        [[3, 6]],
+    ]).unwrap();
+    assert_eq!(js!(v[0]).unwrap().as_f64().unwrap(), 1.0);
+    assert_eq!(js!(v[1]).unwrap().as_f64().unwrap(), 5.0);
+    assert_eq!(js!(v[2][0]).unwrap().as_f64().unwrap(), 4.0);
+    assert_eq!(js!(v[3][0][0]).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js!(v[3][0][1]).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!(v[3][0][2]).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
+    assert_eq!(js!(v[3][1]).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
+    assert_eq!(js!(v[4]).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
+    match js!(v[4][17]).unwrap_err() {
+        js_helpers::JsMacroError::IndexLookup { object: _, index } => assert_eq!(index, 17),
+        x => panic!("{x:?}"),
+    }
+    assert_eq!(js!(v[v[3][0][0]][0][1]).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!(v[v[3][0][0]]["0"][1]).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!(v[v["3"][0][0]]["0"][1]).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!(v[v["3"]["0"]["0"]]["0"]["1"]).unwrap().as_f64().unwrap(), 6.0);
+}
+
+#[wasm_bindgen_test]
+fn test_object_access() {
     let v = js!({
         hello: 45,
         world: { more: 22 },
     }).unwrap();
     assert_eq!(js!(v.hello).unwrap().as_f64().unwrap(), 45.0);
     assert_eq!(js!(v.world.more).unwrap().as_f64().unwrap(), 22.0);
+    assert_eq!(js!(v.foo).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
+    match js!(v.foo.bar).unwrap_err() {
+        js_helpers::JsMacroError::NameLookup { object: _, name } => assert_eq!(name, "bar"),
+        x => panic!("{x:?}"),
+    }
+    assert_eq!(js!(v.foo?.bar).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
+    match js!(v.foo?.bar.baz).unwrap_err() {
+        js_helpers::JsMacroError::NameLookup { object: _, name } => assert_eq!(name, "baz"),
+        x => panic!("{x:?}"),
+    }
+    assert_eq!(js!(v.foo?.bar?.baz).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
 }
