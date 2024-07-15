@@ -108,7 +108,7 @@ fn test_array_access() {
     assert_eq!(js!(v[3][1]).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
     assert_eq!(js!(v[4]).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
     match js!(v[4][17]).unwrap_err() {
-        js_helpers::JsMacroError::IndexLookup { object: _, index } => assert_eq!(index, 17),
+        js_helpers::JsMacroError::Lookup { object: _, index } => assert_eq!(index, 17),
         x => panic!("{x:?}"),
     }
     assert_eq!(js!(v[v[3][0][0]][0][1]).unwrap().as_f64().unwrap(), 6.0);
@@ -130,12 +130,12 @@ fn test_object_access() {
     assert_eq!(js!(v["world"]["more"]).unwrap().as_f64().unwrap(), 22.0);
     assert_eq!(js!(v.foo).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
     match js!(v.foo.bar).unwrap_err() {
-        js_helpers::JsMacroError::DotLookup { object: _, name } => assert_eq!(name, "bar"),
+        js_helpers::JsMacroError::Lookup { object: _, index } => assert_eq!(index, "bar"),
         x => panic!("{x:?}"),
     }
     assert_eq!(js!(v.foo?.bar).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
     match js!(v.foo?.bar.baz).unwrap_err() {
-        js_helpers::JsMacroError::DotLookup { object: _, name } => assert_eq!(name, "baz"),
+        js_helpers::JsMacroError::Lookup { object: _, index } => assert_eq!(index, "baz"),
         x => panic!("{x:?}"),
     }
     assert_eq!(js!(v.foo?.bar?.baz).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
@@ -163,4 +163,14 @@ fn test_function_calls() {
     assert_eq!(js!(v.stuff(2, 3).x).unwrap().as_f64().unwrap(), 2.0);
     assert_eq!(js!(v.stuff(2, 3).y.z).unwrap().as_f64().unwrap(), 3.0);
     assert_eq!(js!(v.deeper(6, 7)(2)()).unwrap().as_f64().unwrap(), 44.0);
+
+    let x = js!([ v.deeper(6, 7)(2)() ]).unwrap();
+    assert_eq!(js!(x[0]).unwrap().as_f64().unwrap(), 44.0);
+
+    let x = js!({ zz: v.deeper(6, 7)(2)(), "yy": 12, "x x": 7 }).unwrap();
+    assert_eq!(js!(x.zz).unwrap().as_f64().unwrap(), 44.0);
+    assert_eq!(js!(x["zz"]).unwrap().as_f64().unwrap(), 44.0);
+    assert_eq!(js!(x.yy).unwrap().as_f64().unwrap(), 12.0);
+    assert_eq!(js!(x["yy"]).unwrap().as_f64().unwrap(), 12.0);
+    assert_eq!(js!(x["x x"]).unwrap().as_f64().unwrap(), 7.0);
 }
