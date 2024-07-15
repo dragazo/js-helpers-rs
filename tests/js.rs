@@ -174,3 +174,17 @@ fn test_function_calls() {
     assert_eq!(js!(x["yy"]).unwrap().as_f64().unwrap(), 12.0);
     assert_eq!(js!(x["x x"]).unwrap().as_f64().unwrap(), 7.0);
 }
+
+#[wasm_bindgen_test]
+fn test_complex_root() {
+    assert_eq!(js!([5,true,null]["0"]).unwrap().as_f64().unwrap(), 5.0);
+    assert_eq!(js!([5,true,null]["1"]).unwrap().as_bool().unwrap(), true);
+    assert_eq!(js!([5,true,null]["2"]).unwrap().is_null(), true);
+
+    assert_eq!(js!({ test: 5, more: false, again: null }.test).unwrap().as_f64().unwrap(), 5.0);
+    assert_eq!(js!({ test: 5, more: false, again: null }["test"]).unwrap().as_f64().unwrap(), 5.0);
+    assert_eq!(js!({ test: 5, more: false, again: null }.more).unwrap().as_bool().unwrap(), false);
+    assert_eq!(js!({ test: 5, more: false, again: null }["more"]).unwrap().as_bool().unwrap(), false);
+    assert_eq!(js!({ test: 5, more: false, again: null }.again).unwrap().is_null(), true);
+    assert_eq!(js!({ test: 5, more: false, again: null }["again"]).unwrap().is_null(), true);
+}

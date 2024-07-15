@@ -11,9 +11,12 @@ pub type JsMacroResult = Result<wasm_bindgen::JsValue, JsMacroError>;
 
 #[macro_export]
 macro_rules! js {
-    ([ $($t:tt)* ]) => {{
+    ([ $($t:tt)* ] $($rest:tt)*) => {{
         let mut js_helpers_array_target = $crate::js_sys::Array::new();
-        js!(@fill_array js_helpers_array_target () $($t)*)
+        match js!(@fill_array js_helpers_array_target () $($t)*) {
+            $crate::JsMacroResult::Ok(js_helpers_root) => js!(js_helpers_root $($rest)*),
+            x => x,
+        }
     }};
     (@fill_array $target:ident ()) => {
         $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($target))
@@ -33,9 +36,12 @@ macro_rules! js {
 
     // --------------------------------------------------------------------------------------------------------------
 
-    ({ $($t:tt)* }) => {{
+    ({ $($t:tt)* } $($rest:tt)*) => {{
         let mut js_helpers_object_target = $crate::wasm_bindgen::JsValue::from($crate::js_sys::Object::new());
-        js!(@fill_object js_helpers_object_target () () $($t)*)
+        match js!(@fill_object js_helpers_object_target () () $($t)*) {
+            $crate::JsMacroResult::Ok(js_helpers_root) => js!(js_helpers_root $($rest)*),
+            x => x,
+        }
     }};
     (@fill_object $target:ident () ()) => {
         $crate::JsMacroResult::Ok($target)
