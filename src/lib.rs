@@ -109,19 +109,31 @@ macro_rules! js {
 
     ($root:ident . $field:ident ( $($args:tt)* ) $($rest:tt)*) => {
         match js!($root . $field) {
-            $crate::JsMacroResult::Ok(js_helpers_function_raw) => match $crate::wasm_bindgen::JsCast::dyn_ref::<$crate::js_sys::Function>(&js_helpers_function_raw) {
-                ::std::option::Option::Some(js_helpers_function) => match js!([$($args)*]) {
-                    $crate::JsMacroResult::Ok(js_helpers_args) => match $crate::js_sys::Reflect::apply(&js_helpers_function, &$root, &$crate::wasm_bindgen::JsCast::dyn_into(js_helpers_args).unwrap()) {
-                        ::std::result::Result::Ok(js_helpers_result) => js!(js_helpers_result $($rest)*),
-                        ::std::result::Result::Err(error) => $crate::JsMacroResult::Err($crate::JsMacroError::FunctionError { object: js_helpers_function_raw, error }),
-                    }
-                    x => x,
-                }
-                ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NotFunction { object: js_helpers_function_raw }),
-            }
+            $crate::JsMacroResult::Ok(js_helpers_function) => js!(@function_call $root js_helpers_function ( $($args)* ) $($rest)*),
             x => x,
         }
     };
+    ($root:ident [ $($index:tt)* ] ( $($args:tt)* ) $($rest:tt)*) => {{
+        match js!($root [ $($index)* ]) {
+            $crate::JsMacroResult::Ok(js_helpers_function) => js!(@function_call $root js_helpers_function ( $($args)* ) $($rest)*),
+            x => x,
+        }
+    }};
+    (@function_call $root:ident $func:ident ( $($args:tt)* ) $($rest:tt)*) => {
+        match $crate::wasm_bindgen::JsCast::dyn_ref::<$crate::js_sys::Function>(&$func) {
+            ::std::option::Option::Some(js_helpers_function) => match js!([$($args)*]) {
+                $crate::JsMacroResult::Ok(js_helpers_args) => match $crate::js_sys::Reflect::apply(&js_helpers_function, &$root, &$crate::wasm_bindgen::JsCast::dyn_into(js_helpers_args).unwrap()) {
+                    ::std::result::Result::Ok(js_helpers_result) => js!(js_helpers_result $($rest)*),
+                    ::std::result::Result::Err(error) => $crate::JsMacroResult::Err($crate::JsMacroError::FunctionError { object: $func, error }),
+                }
+                x => x,
+            }
+            ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NotFunction { object: $func }),
+        }
+    };
+
+    // --------------------------------------------------------------------------------------------------------------
+
     ($root:ident . $field:ident $($rest:tt)*) => {
         match $crate::js_sys::Reflect::get(&$root, &$crate::wasm_bindgen::JsValue::from(stringify!($field))) {
             ::std::result::Result::Ok(js_helpers_sub_object) => js!(js_helpers_sub_object $($rest)*),

@@ -150,8 +150,14 @@ fn test_function_calls() {
         more: {
             stuff: { a: add },
         },
+        stuff: web_sys::js_sys::Function::new_with_args("a, b", "return { x: a, y: { z: b } };"),
     }).unwrap();
     assert_eq!(js!(v.add(5, 4)).unwrap().as_f64().unwrap(), 9.0);
+    assert_eq!(js!(v["add"](5, 4)).unwrap().as_f64().unwrap(), 9.0);
     assert_eq!(js!(v.sub(5, 4)).unwrap().as_f64().unwrap(), 1.0);
     assert_eq!(js!(v.more.stuff.a(1, 6)).unwrap().as_f64().unwrap(), 7.0);
+    assert_eq!(js!(v["more"].stuff.a(1, 6)).unwrap().as_f64().unwrap(), 7.0);
+    assert_eq!(js!(v["more"]["stuff"].a(1, 6)).unwrap().as_f64().unwrap(), 7.0);
+    assert_eq!(js!(v.stuff(2, 3).x).unwrap().as_f64().unwrap(), 2.0);
+    assert_eq!(js!(v.stuff(2, 3).y.z).unwrap().as_f64().unwrap(), 3.0);
 }
