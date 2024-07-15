@@ -2,6 +2,11 @@
 name = "js-helpers"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Devin Jean <emailcruzjean@yahoo.com>"]
+repository = "https://github.com/dragazo/js-helpers-rs"
+documentation = "https://docs.rs/js-helpers-rs"
+description = "Easy interop utils for js objects in wasm"
 
 [dependencies]
 web-sys = "0.3.69"
