@@ -124,15 +124,18 @@ fn test_object_access() {
         world: { more: 22 },
     }).unwrap();
     assert_eq!(js!(v.hello).unwrap().as_f64().unwrap(), 45.0);
+    assert_eq!(js!(v["hello"]).unwrap().as_f64().unwrap(), 45.0);
     assert_eq!(js!(v.world.more).unwrap().as_f64().unwrap(), 22.0);
+    assert_eq!(js!(v["world"].more).unwrap().as_f64().unwrap(), 22.0);
+    assert_eq!(js!(v["world"]["more"]).unwrap().as_f64().unwrap(), 22.0);
     assert_eq!(js!(v.foo).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
     match js!(v.foo.bar).unwrap_err() {
-        js_helpers::JsMacroError::NameLookup { object: _, name } => assert_eq!(name, "bar"),
+        js_helpers::JsMacroError::DotLookup { object: _, name } => assert_eq!(name, "bar"),
         x => panic!("{x:?}"),
     }
     assert_eq!(js!(v.foo?.bar).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
     match js!(v.foo?.bar.baz).unwrap_err() {
-        js_helpers::JsMacroError::NameLookup { object: _, name } => assert_eq!(name, "baz"),
+        js_helpers::JsMacroError::DotLookup { object: _, name } => assert_eq!(name, "baz"),
         x => panic!("{x:?}"),
     }
     assert_eq!(js!(v.foo?.bar?.baz).unwrap(), wasm_bindgen::JsValue::UNDEFINED);

@@ -3,9 +3,8 @@ pub use web_sys::{self, js_sys};
 
 #[derive(Debug)]
 pub enum JsMacroError {
-    NameLookup { object: wasm_bindgen::JsValue, name: &'static str },
-    IndexLookup { object: wasm_bindgen::JsValue, index: u32 },
-    BadIndex { index: wasm_bindgen::JsValue },
+    IndexLookup { object: wasm_bindgen::JsValue, index: wasm_bindgen::JsValue },
+    DotLookup { object: wasm_bindgen::JsValue, name: &'static str },
 }
 pub type JsMacroResult = Result<wasm_bindgen::JsValue, JsMacroError>;
 
@@ -106,7 +105,7 @@ macro_rules! js {
     ($root:ident . $field:ident $($rest:tt)*) => {
         match $crate::js_sys::Reflect::get(&$root, &$crate::wasm_bindgen::JsValue::from(stringify!($field))) {
             ::std::result::Result::Ok(js_helpers_sub_object) => js!(js_helpers_sub_object $($rest)*),
-            ::std::result::Result::Err(e) => $crate::JsMacroResult::Err($crate::JsMacroError::NameLookup { object: $root.clone(), name: stringify!($field) }),
+            ::std::result::Result::Err(_) => $crate::JsMacroResult::Err($crate::JsMacroError::DotLookup { object: $root.clone(), name: stringify!($field) }),
         }
     };
     ($root:ident ?. $field:ident $($rest:tt)*) => {{
@@ -118,18 +117,27 @@ macro_rules! js {
 
     ($root:ident [ $($index:tt)* ] $($rest:tt)*) => {{
         match js!($($index)*) {
-            $crate::JsMacroResult::Ok(js_helpers_index) => {
-                let js_helpers_index_f64 = js_helpers_index.as_f64().unwrap_or_else(|| js_helpers_index.as_string().and_then(|x| x.parse::<f64>().ok()).unwrap_or_else(|| 0.5));
-                let js_helpers_index_u32 = js_helpers_index_f64 as u32;
-                match js_helpers_index_f64 == js_helpers_index_u32 as f64 {
-                    true => match $crate::wasm_bindgen::JsCast::dyn_ref::<$crate::js_sys::Array>(&$root) {
-                        ::std::option::Option::Some(js_helpers_sub_object) => {
+            $crate::JsMacroResult::Ok(js_helpers_index) => match $crate::wasm_bindgen::JsCast::dyn_ref::<$crate::js_sys::Array>(&$root) {
+                ::std::option::Option::Some(js_helpers_sub_object) => {
+                    let js_helpers_index_f64 = js_helpers_index.as_f64().or_else(|| js_helpers_index.as_string().and_then(|x| x.parse::<f64>().ok())).unwrap_or_else(|| 0.5);
+                    let js_helpers_index_u32 = js_helpers_index_f64 as u32;
+                    match js_helpers_index_f64 == js_helpers_index_u32 as f64 {
+                        true => {
                             let js_helpers_sub_object = js_helpers_sub_object.get(js_helpers_index_u32);
                             js!(js_helpers_sub_object $($rest)*)
                         }
-                        ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::IndexLookup { object: $root.clone(), index: js_helpers_index_u32 }),
+                        false => $crate::JsMacroResult::Err($crate::JsMacroError::IndexLookup { object: $root.clone(), index: js_helpers_index }),
                     }
-                    false => $crate::JsMacroResult::Err($crate::JsMacroError::BadIndex { index: js_helpers_index }),
+                }
+                ::std::option::Option::None => match $crate::wasm_bindgen::JsCast::dyn_ref::<$crate::js_sys::Object>(&$root) {
+                    ::std::option::Option::Some(js_helpers_sub_object) => match js_helpers_index.as_string().or_else(|| js_helpers_index.as_f64().map(|x| x.to_string())) {
+                        ::std::option::Option::Some(js_helpers_index_name) => match $crate::js_sys::Reflect::get(&js_helpers_sub_object, &js_helpers_index_name.into()) {
+                            ::std::result::Result::Ok(js_helpers_sub_object) => js!(js_helpers_sub_object $($rest)*),
+                            ::std::result::Result::Err(_) => $crate::JsMacroResult::Err($crate::JsMacroError::IndexLookup { object: $root.clone(), index: js_helpers_index }),
+                        }
+                        ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::IndexLookup { object: $root.clone(), index: js_helpers_index }),
+                    }
+                    ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::IndexLookup { object: $root.clone(), index: js_helpers_index }),
                 }
             }
             x => x,
@@ -157,4 +165,3 @@ macro_rules! js {
     //     Reflect::apply(&js!($root.$f).dyn_ref().unwrap(), &$root, &(vec![$($args),*] as Vec<JsValue>).into_iter().collect())
     // };
 }
-
