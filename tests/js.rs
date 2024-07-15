@@ -68,30 +68,35 @@ fn test_array() {
     assert_eq!(v_6.get(2), v1s);
     assert_ne!(v_6.get(2), js!([]).unwrap());
     assert_ne!(v_6.get(4), js!({}).unwrap());
-    let v_6_4 = wasm_bindgen::JsCast::dyn_into::<web_sys::js_sys::Map>(v_6.get(4)).unwrap();
-    assert_eq!(v_6_4.size(), 1);
-    assert_eq!(v_6_4.get(&"age".into()).as_f64().unwrap(), 5.0);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v_6.get(4), &"age".into()).unwrap().as_f64().unwrap(), 5.0);
 }
 
 #[wasm_bindgen_test]
 fn test_object() {
     let v1 = js!({}).unwrap();
-    let v = wasm_bindgen::JsCast::dyn_ref::<web_sys::js_sys::Map>(&v1).unwrap();
-    assert_eq!(v.size(), 0);
     let v2 = js!({ hello: null, more: undefined, another: 4 + 6, names: ["adam", "john"], meta: {age: 6+2, index: v1} }).unwrap();
-    let v = wasm_bindgen::JsCast::dyn_ref::<web_sys::js_sys::Map>(&v2).unwrap();
-    assert_eq!(v.size(), 5);
-    assert_eq!(v.get(&"hello".into()), wasm_bindgen::JsValue::NULL);
-    assert_eq!(v.get(&"more".into()), wasm_bindgen::JsValue::UNDEFINED);
-    assert_eq!(v.get(&"another".into()).as_f64().unwrap(), 10.0);
-    assert_eq!(v.get(&"names".into()).is_array(), true);
-    let v_names = wasm_bindgen::JsCast::dyn_into::<web_sys::js_sys::Array>(v.get(&"names".into())).unwrap();
+    assert_eq!(web_sys::js_sys::Reflect::own_keys(&v2).unwrap().length(), 5);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v2, &"hello".into()).unwrap(), wasm_bindgen::JsValue::NULL);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v2, &"more".into()).unwrap(), wasm_bindgen::JsValue::UNDEFINED);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v2, &"another".into()).unwrap().as_f64().unwrap(), 10.0);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v2, &"names".into()).unwrap().is_array(), true);
+    let v_names = wasm_bindgen::JsCast::dyn_into::<web_sys::js_sys::Array>(web_sys::js_sys::Reflect::get(&v2, &"names".into()).unwrap()).unwrap();
     assert_eq!(v_names.length(), 2);
     assert_eq!(v_names.get(0).as_string().unwrap(), "adam");
     assert_eq!(v_names.get(1).as_string().unwrap(), "john");
-    assert_eq!(v.get(&"meta".into()).is_object(), true);
-    let v_meta = wasm_bindgen::JsCast::dyn_into::<web_sys::js_sys::Map>(v.get(&"meta".into())).unwrap();
-    assert_eq!(v_meta.size(), 2);
-    assert_eq!(v_meta.get(&"age".into()).as_f64().unwrap(), 8.0);
-    assert_eq!(v_meta.get(&"index".into()), v1);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v2, &"meta".into()).unwrap().is_object(), true);
+    let v_meta = web_sys::js_sys::Reflect::get(&v2, &"meta".into()).unwrap();
+    assert_eq!(web_sys::js_sys::Reflect::own_keys(&v_meta).unwrap().length(), 2);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v_meta, &"age".into()).unwrap().as_f64().unwrap(), 8.0);
+    assert_eq!(web_sys::js_sys::Reflect::get(&v_meta, &"index".into()).unwrap(), v1);
+}
+
+#[wasm_bindgen_test]
+fn test_field_access() {
+    let v = js!({
+        hello: 45,
+        world: { more: 22 },
+    }).unwrap();
+    assert_eq!(js!(v.hello).unwrap().as_f64().unwrap(), 45.0);
+    assert_eq!(js!(v.world.more).unwrap().as_f64().unwrap(), 22.0);
 }
