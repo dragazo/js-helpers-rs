@@ -6,11 +6,29 @@ pub enum JsMacroError {
     Lookup { object: wasm_bindgen::JsValue, index: wasm_bindgen::JsValue },
     NotFunction { object: wasm_bindgen::JsValue },
     FunctionError { object: wasm_bindgen::JsValue, error: wasm_bindgen::JsValue },
+    NoWindow,
 }
 pub type JsMacroResult = Result<wasm_bindgen::JsValue, JsMacroError>;
 
 #[macro_export]
 macro_rules! js {
+    (null $($rest:tt)*) => {{
+        let js_helpers_null = $crate::wasm_bindgen::JsValue::null();
+        js!(js_helpers_null $($rest)*)
+    }};
+    (undefined $($rest:tt)*) => {{
+        let js_helpers_undefined = $crate::wasm_bindgen::JsValue::undefined();
+        js!(js_helpers_undefined $($rest)*)
+    }};
+    (window $($rest:tt)*) => {
+        match $crate::web_sys::window().map($crate::wasm_bindgen::JsValue::from) {
+            ::std::option::Option::Some(js_helpers_window) => js!(js_helpers_window $($rest)*),
+            ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NoWindow),
+        }
+    };
+
+    // --------------------------------------------------------------------------------------------------------------
+
     ([ $($t:tt)* ] $($rest:tt)*) => {{
         let mut js_helpers_array_target = $crate::js_sys::Array::new();
         match js!(@fill_array js_helpers_array_target () $($t)*) {
@@ -147,12 +165,6 @@ macro_rules! js {
 
     // --------------------------------------------------------------------------------------------------------------
 
-    (null) => {
-        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::null())
-    };
-    (undefined) => {
-        $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::undefined())
-    };
     ($v:ident) => {
         $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($v.clone()))
     };

@@ -1,6 +1,8 @@
 use wasm_bindgen_test::*;
 use js_helpers::js;
 
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
 #[wasm_bindgen_test]
 fn test_null() {
     let _v = js!(null);
@@ -187,4 +189,15 @@ fn test_complex_root() {
     assert_eq!(js!({ test: 5, more: false, again: null }["more"]).unwrap().as_bool().unwrap(), false);
     assert_eq!(js!({ test: 5, more: false, again: null }.again).unwrap().is_null(), true);
     assert_eq!(js!({ test: 5, more: false, again: null }["again"]).unwrap().is_null(), true);
+}
+
+#[wasm_bindgen_test]
+fn test_special_ident() {
+    assert_eq!(js!(null?.foo).unwrap().is_undefined(), true);
+    assert_eq!(js!(undefined?.foo).unwrap().is_undefined(), true);
+
+    let w = js!(window).unwrap();
+    let a1 = js!(w.alert).unwrap();
+    let a2 = js!(window.alert).unwrap();
+    assert_eq!(a1, a2);
 }
