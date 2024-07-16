@@ -1,3 +1,6 @@
+#![forbid(unsafe_code)]
+#![doc = include_str!("../README.md")]
+
 pub use wasm_bindgen;
 pub use web_sys::{self, js_sys};
 
