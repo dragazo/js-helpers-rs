@@ -201,3 +201,41 @@ fn test_special_ident() {
     let a2 = js!(window.alert).unwrap();
     assert_eq!(a1, a2);
 }
+
+#[wasm_bindgen_test]
+fn test_assignment() {
+    let x = js!({
+        foo: 45,
+        bar: 12,
+        baz: { mer: 2, der: [3, 4, 2] },
+    }).unwrap();
+
+    assert_eq!(js!(x.foo).unwrap().as_f64().unwrap(), 45.0);
+    assert_eq!(js!(x.foo = 20).unwrap().as_f64().unwrap(), 20.0);
+    assert_eq!(js!(x.foo).unwrap().as_f64().unwrap(), 20.0);
+    assert_eq!(js!(x["foo"] = 42).unwrap().as_f64().unwrap(), 42.0);
+    assert_eq!(js!(x.foo).unwrap().as_f64().unwrap(), 42.0);
+
+    assert_eq!(js!(x.baz.mer).unwrap().as_f64().unwrap(), 2.0);
+    assert_eq!(js!(x.baz.mer = 7).unwrap().as_f64().unwrap(), 7.0);
+    assert_eq!(js!(x.baz.mer).unwrap().as_f64().unwrap(), 7.0);
+    assert_eq!(js!(x.baz["mer"] = -2).unwrap().as_f64().unwrap(), -2.0);
+    assert_eq!(js!(x.baz.mer).unwrap().as_f64().unwrap(), -2.0);
+
+    assert_eq!(js!(x.baz.der.length).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js!(x.baz.der[0]).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js!(x.baz.der[1]).unwrap().as_f64().unwrap(), 4.0);
+    assert_eq!(js!(x.baz.der[2]).unwrap().as_f64().unwrap(), 2.0);
+    assert_eq!(js!(x.baz.der[1] = 35).unwrap().as_f64().unwrap(), 35.0);
+    assert_eq!(js!(x.baz.der.length).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js!(x.baz.der[0]).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js!(x.baz.der[1]).unwrap().as_f64().unwrap(), 35.0);
+    assert_eq!(js!(x.baz.der[2]).unwrap().as_f64().unwrap(), 2.0);
+    assert_eq!(js!(x.baz.der["4"] = 22).unwrap().as_f64().unwrap(), 22.0);
+    assert_eq!(js!(x.baz.der.length).unwrap().as_f64().unwrap(), 5.0);
+    assert_eq!(js!(x.baz.der[0]).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js!(x.baz.der[1]).unwrap().as_f64().unwrap(), 35.0);
+    assert_eq!(js!(x.baz.der[2]).unwrap().as_f64().unwrap(), 2.0);
+    assert_eq!(js!(x.baz.der[3]).unwrap().is_undefined(), true);
+    assert_eq!(js!(x.baz.der[4]).unwrap().as_f64().unwrap(), 22.0);
+}
