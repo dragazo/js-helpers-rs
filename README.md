@@ -21,6 +21,8 @@ js!(window.foo = "bar").unwrap();
 ```
 
 The `js!` macro provided by this crate aims to provide as close to the full syntax of javascript as possible and unfold into normal Rust code using `wasm-bindgen`, `web-sys`, and `js-sys`.
+Importantly, the `js!` macro does not simply `eval` its content, and instead generates normal Rust code that is automatically syntax and type checked at compile time.
+
 The following is a breakdown of the supported syntax features; note that all of these features may be combined arbitrarily in any order.
 
 ## Value Creation
@@ -66,6 +68,27 @@ js!(window.open("http://google.com", "_blank")).unwrap();
 ```
 
 The syntax `<obj>.<func>(...)` and `<obj>[<func>](...)` denote method calls on the context object `<obj>` while any other function call is treated as a non-method (i.e., no context `this` object).
+
+## Functions
+
+The `js!` macro supports creating anonymous functions via the normal javascript arrow (`=>`) or explicit function (`function`) syntax.
+
+```rust
+let f = js!((x, y) => x + y).unwrap();
+let g = js!(somethingAsync().then(res => res.body)).unwrap();
+let h = js!(function (x, y, z) { return x + y * z; }).unwrap();
+```
+
+However, due to current limitations of the wasm dynamic function interface, these created arrow functions are non-capturing and importantly cannot refer to Rust `JsValue` objects in scope.
+This is because their bodies are essentially `eval` strings, and therefore do not get the extra Rust features or compile time syntax checking of normal `js!` macro usage.
+
+Despite this, as previously demonstrated you can still call a function with Rust objects as arguments.
+This provides a means of simulating capturing closures using higher order functions.
+
+```rust
+let my_obj = js!({ hello: true, world: 56 }).unwrap();
+let f = js!((my_obj => (x, y) => x + y + my_obj.world)(my_obj)).unwrap();
+```
 
 ## Special Tokens
 

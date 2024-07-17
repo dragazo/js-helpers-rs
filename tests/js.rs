@@ -246,3 +246,20 @@ fn test_assignment() {
     assert_eq!(js_helpers::js!(x.baz.der[3]).unwrap().is_undefined(), true);
     assert_eq!(js_helpers::js!(x.baz.der[4]).unwrap().as_f64().unwrap(), 22.0);
 }
+
+#[wasm_bindgen_test]
+fn test_closures() {
+    let f1 = js_helpers::js!((a, b) => a + b).unwrap();
+    let f2 = js_helpers::js!((x) => x * 2).unwrap();
+    let f3 = js_helpers::js!(z => z - 5).unwrap();
+    let f4 = js_helpers::js!(z => { return z + 1; }).unwrap();
+    let f5 = js_helpers::js!((f2 => (z, w) => z * w * f2(w))(f2)).unwrap();
+    let f6 = js_helpers::js!(function (a, b) { return a * b + 1; }).unwrap();
+
+    assert_eq!(js_helpers::js!(f1(4, 5)).unwrap().as_f64().unwrap(), 9.0);
+    assert_eq!(js_helpers::js!(f2(7)).unwrap().as_f64().unwrap(), 14.0);
+    assert_eq!(js_helpers::js!(f3(8)).unwrap().as_f64().unwrap(), 3.0);
+    assert_eq!(js_helpers::js!(f4(11)).unwrap().as_f64().unwrap(), 12.0);
+    assert_eq!(js_helpers::js!(f5(7, 4)).unwrap().as_f64().unwrap(), 224.0);
+    assert_eq!(js_helpers::js!(f6(3, 4)).unwrap().as_f64().unwrap(), 13.0);
+}
