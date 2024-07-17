@@ -48,7 +48,7 @@ js!(my_obj["with space"] = 17).unwrap();
 js!(my_obj.my_arr[1] = { hello: true, world: false }).unwrap();
 ```
 
-As seen above, `js!` supports the both the dot (`.`) and bracket (`[]`) syntax options for accessing objects.
+As seen above, `js!` supports both the dot (`.`) and bracket (`[]`) syntax options for accessing objects.
 Additionally, the nullable dot notation (`?.`) is also supported with the same semantics as in javascript:
 
 ```rust

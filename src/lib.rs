@@ -212,6 +212,12 @@ macro_rules! js {
 
     // --------------------------------------------------------------------------------------------------------------
 
+    (( $($stuff:tt)* ) $($rest:tt)*) => {
+        match js!($($stuff)*) {
+            $crate::JsMacroResult::Ok(js_helpers_paren_value) => js!(js_helpers_paren_value $($rest)*),
+            x => x,
+        }
+    };
     ($v:ident) => {
         $crate::JsMacroResult::Ok($crate::wasm_bindgen::JsValue::from($v.clone()))
     };

@@ -117,6 +117,9 @@ fn test_array_access() {
     assert_eq!(js!(v[v[3][0][0]]["0"][1]).unwrap().as_f64().unwrap(), 6.0);
     assert_eq!(js!(v[v["3"][0][0]]["0"][1]).unwrap().as_f64().unwrap(), 6.0);
     assert_eq!(js!(v[v["3"]["0"]["0"]]["0"]["1"]).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!((v[v["3"]["0"]["0"]]["0"]["1"])).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!(((v[v["3"]["0"]["0"]]["0"])["1"])).unwrap().as_f64().unwrap(), 6.0);
+    assert_eq!(js!(((v[(v["3"])["0"]["0"]]["0"])["1"])).unwrap().as_f64().unwrap(), 6.0);
 }
 
 #[wasm_bindgen_test]
@@ -127,6 +130,7 @@ fn test_object_access() {
     }).unwrap();
     assert_eq!(js!(v.hello).unwrap().as_f64().unwrap(), 45.0);
     assert_eq!(js!(v["hello"]).unwrap().as_f64().unwrap(), 45.0);
+    assert_eq!(js!(v[("hello")]).unwrap().as_f64().unwrap(), 45.0);
     assert_eq!(js!(v.world.more).unwrap().as_f64().unwrap(), 22.0);
     assert_eq!(js!(v["world"].more).unwrap().as_f64().unwrap(), 22.0);
     assert_eq!(js!(v["world"]["more"]).unwrap().as_f64().unwrap(), 22.0);
@@ -165,6 +169,10 @@ fn test_function_calls() {
     assert_eq!(js!(v.stuff(2, 3).x).unwrap().as_f64().unwrap(), 2.0);
     assert_eq!(js!(v.stuff(2, 3).y.z).unwrap().as_f64().unwrap(), 3.0);
     assert_eq!(js!(v.deeper(6, 7)(2)()).unwrap().as_f64().unwrap(), 44.0);
+    assert_eq!(js!((v.deeper(6, 7)(2))()).unwrap().as_f64().unwrap(), 44.0);
+    assert_eq!(js!(((v.deeper(6, 7))(2))()).unwrap().as_f64().unwrap(), 44.0);
+    assert_eq!(js!((((v.deeper)(6, 7))(2))()).unwrap().as_f64().unwrap(), 44.0);
+    assert_eq!(js!(((((v).deeper)(6, 7))(2))()).unwrap().as_f64().unwrap(), 44.0);
 
     let x = js!([ v.deeper(6, 7)(2)() ]).unwrap();
     assert_eq!(js!(x[0]).unwrap().as_f64().unwrap(), 44.0);
