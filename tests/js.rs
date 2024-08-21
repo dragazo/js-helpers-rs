@@ -264,3 +264,29 @@ fn test_closures() {
     ::std::assert_eq!(::js_helpers::js!(f5(7, 4)).unwrap().as_f64().unwrap(), 224.0);
     ::std::assert_eq!(::js_helpers::js!(f6(3, 4)).unwrap().as_f64().unwrap(), 13.0);
 }
+
+#[::wasm_bindgen_test::wasm_bindgen_test]
+fn test_rust_exprs() {
+    #[derive(Clone)]
+    struct MyString(::std::string::String);
+    impl MyString {
+        fn as_str(&self) -> &str { &self.0 }
+    }
+
+    let f = ::js_helpers::js!((a, b) => a + " " + b).unwrap();
+    let g = ::js_helpers::js!((x, y) => x[y]).unwrap();
+
+    let a = "first";
+    let b = <::std::string::String as ::std::convert::From<_>>::from("second");
+    let c = MyString(<::std::string::String as ::std::convert::From<_>>::from("third"));
+
+    ::std::assert_eq!(::js_helpers::js!(f("zero", "world")).unwrap().as_string().unwrap(), "zero world");
+    ::std::assert_eq!(::js_helpers::js!(f(a, "world")).unwrap().as_string().unwrap(), "first world");
+    ::std::assert_eq!(::js_helpers::js!(f({ (a) }, "world")).unwrap().as_string().unwrap(), "first world");
+    ::std::assert_eq!(::js_helpers::js!(f(b, "world")).unwrap().as_string().unwrap(), "second world");
+    ::std::assert_eq!(::js_helpers::js!(f({ c.as_str() }, "world")).unwrap().as_string().unwrap(), "third world");
+
+    ::std::assert_eq!(::js_helpers::js!(g({ a }, "a")).unwrap().as_string().unwrap(), "first");
+    ::std::assert_eq!(::js_helpers::js!(g({ b }, "b")).unwrap().as_string().unwrap(), "second");
+    ::std::assert_eq!(::js_helpers::js!(g({ c: { c.as_str() } }, "c")).unwrap().as_string().unwrap(), "third");
+}

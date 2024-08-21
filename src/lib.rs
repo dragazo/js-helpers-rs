@@ -59,6 +59,13 @@ macro_rules! js {
 
     // --------------------------------------------------------------------------------------------------------------
 
+    ({ $var:ident } $($rest:tt)*) => {
+        $crate::js!({ $var: $var })
+    };
+    ({ $rust_expr:expr } $($rest:tt)*) => {{
+        let mut js_helpers_rust_object: $crate::wasm_bindgen::JsValue = ::std::convert::Into::into($rust_expr);
+        $crate::js!(js_helpers_rust_object $($rest)*)
+    }};
     ({ $($t:tt)* } $($rest:tt)*) => {{
         let mut js_helpers_object_target: $crate::wasm_bindgen::JsValue = ::std::convert::Into::into($crate::js_sys::Object::new());
         match $crate::js!(@fill_object js_helpers_object_target () () $($t)*) {
@@ -131,11 +138,11 @@ macro_rules! js {
             ::std::option::Option::Some(js_helpers_function) => match $crate::js!([$($args)*]) {
                 $crate::JsMacroResult::Ok(js_helpers_args) => match $crate::js_sys::Reflect::apply(&js_helpers_function, &$root, &$crate::wasm_bindgen::JsCast::dyn_into(js_helpers_args).unwrap()) {
                     ::std::result::Result::Ok(js_helpers_result) => $crate::js!(js_helpers_result $($rest)*),
-                    ::std::result::Result::Err(error) => $crate::JsMacroResult::Err($crate::JsMacroError::FunctionError { object: ::std::convert::Into::into($func), error }),
+                    ::std::result::Result::Err(error) => $crate::JsMacroResult::Err($crate::JsMacroError::FunctionError { object: ::std::convert::Into::into(::std::clone::Clone::clone(&$func)), error }),
                 }
                 x => x,
             }
-            ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NotFunction { object: ::std::convert::Into::into($func) }),
+            ::std::option::Option::None => $crate::JsMacroResult::Err($crate::JsMacroError::NotFunction { object: ::std::convert::Into::into(::std::clone::Clone::clone(&$func)) }),
         }
     };
 

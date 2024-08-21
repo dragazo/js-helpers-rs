@@ -37,6 +37,10 @@ let my_arr = js!([ 1, true, null, undefined, "test" ]).unwrap();
 let my_obj = js!({ name: "john", "with space": true, my_arr }).unwrap();
 ```
 
+As seen above, you can also reference in-scope Rust variables by name, which are automatically converted to JS values.
+If you would like to include more complex Rust expressions, you can wrap the expression in a Rust-style expression block: `{ <expr> }`.
+However, because basic Rust identifiers are already supported without the block syntax, the special case of `{ <ident> }` such as `{ x }` is reserved for creating a JS object as shorthand for `{ x: x }`.
+
 ## Variable Access
 
 You can get or assign values to javascript variables/fields/etc. using normal javascript syntax.
